@@ -10,6 +10,7 @@ import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -44,6 +45,7 @@ import com.baidu.mapapi.map.TextOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.utils.CoordinateConverter;
 import com.td.tddrivingbehavior.entity.Vehicle;
+import com.td.tddrivingbehavior.utils.FileUtils;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -256,15 +258,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 }
             });
-            readCSVFile(fileName);
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), "读取csv文件成功", Toast.LENGTH_LONG).show();
-                    //一个线程只读一次文件，读完后需要新建线程
-                    readFileThread = null;
-                }
-            });
+            //如果读取失败，则不Toast成功
+            if (readCSVFile(fileName)) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getApplicationContext(), "读取csv文件成功", Toast.LENGTH_LONG).show();
+                        //一个线程只读一次文件，读完后需要新建线程
+                        readFileThread = null;
+                    }
+                });
+            } else {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getApplicationContext(), "读取csv文件失败", Toast.LENGTH_LONG).show();
+                        //一个线程只读一次文件，读完后需要新建线程
+                        readFileThread = null;
+                    }
+                });
+            }
         }
     }
 
@@ -396,31 +409,53 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * 读取.csv文件
+     *
+     * @param fileName 文件名
+     * @return 成功返回true，失败返回false
      */
-    private void readCSVFile(String fileName) {
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(getAssets().open(fileName), "UTF-8"));  // 防止出现乱码
-            CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
-            Iterable<CSVRecord> csvRecords = csvParser.getRecords();
-            for (CSVRecord csvRecord : csvRecords) {
-                Vehicle vehicleBean = new Vehicle();
-                vehicleBean.setVehicleplatenumber(csvRecord.get("vehicleplatenumber"));
-                vehicleBean.setDevice_num(csvRecord.get("device_num"));
-                vehicleBean.setDirection_angle(csvRecord.get("direction_angle"));
-                vehicleBean.setLng(csvRecord.get("lngx"));//lng
-                vehicleBean.setLat(csvRecord.get("latx"));//lat
-                vehicleBean.setAcc_state(csvRecord.get("acc_state"));
-                vehicleBean.setRight_turn_signals(csvRecord.get("right_turn_signals"));
-                vehicleBean.setLeft_turn_signals(csvRecord.get("left_turn_signals"));
-                vehicleBean.setHand_brake(csvRecord.get("hand_brake"));
-                vehicleBean.setFoot_brake(csvRecord.get("foot_brake"));
-                vehicleBean.setLocation_time(csvRecord.get("location_time"));
-                vehicleBean.setGps_speed(csvRecord.get("gps_speed"));
-                vehicleBean.setMileage(csvRecord.get("mileage"));
-                vehicleList.add(vehicleBean);
+    private boolean readCSVFile(String fileName) {
+        String path = Environment.getExternalStorageDirectory().getAbsolutePath();
+
+        String dirPath = path + "/TDdata";
+        if (!dirPath.endsWith(File.separator)) {//不是以 路径分隔符 "/" 结束，则添加路径分隔符 "/"
+            dirPath = dirPath + File.separator;
+        }
+        File dir = new File(path + "/TDdata");
+        //文件夹不存在，则创建新的
+        if (!dir.exists()) {
+            dir.mkdirs();
+            return false;
+        } else {
+            //存在则读取文件
+            File file = new File(dirPath + fileName);
+            if (!file.exists() || !file.canRead())
+                return false;
+            try {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)/*getAssets().open(fileName)*/, "UTF-8"));  // 防止出现乱码
+                CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim());
+                Iterable<CSVRecord> csvRecords = csvParser.getRecords();
+                for (CSVRecord csvRecord : csvRecords) {
+                    Vehicle vehicleBean = new Vehicle();
+                    vehicleBean.setVehicleplatenumber(csvRecord.get("vehicleplatenumber"));
+                    vehicleBean.setDevice_num(csvRecord.get("device_num"));
+                    vehicleBean.setDirection_angle(csvRecord.get("direction_angle"));
+                    vehicleBean.setLng(csvRecord.get("lngx"));//lng
+                    vehicleBean.setLat(csvRecord.get("latx"));//lat
+                    vehicleBean.setAcc_state(csvRecord.get("acc_state"));
+                    vehicleBean.setRight_turn_signals(csvRecord.get("right_turn_signals"));
+                    vehicleBean.setLeft_turn_signals(csvRecord.get("left_turn_signals"));
+                    vehicleBean.setHand_brake(csvRecord.get("hand_brake"));
+                    vehicleBean.setFoot_brake(csvRecord.get("foot_brake"));
+                    vehicleBean.setLocation_time(csvRecord.get("location_time"));
+                    vehicleBean.setGps_speed(csvRecord.get("gps_speed"));
+                    vehicleBean.setMileage(csvRecord.get("mileage"));
+                    vehicleList.add(vehicleBean);
+                }
+                return true;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
