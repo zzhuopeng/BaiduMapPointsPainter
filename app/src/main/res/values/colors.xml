@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="赤">#f00</color>
+    <color name="橙">#f60</color>
+    <color name="黄">#ff0</color>
+    <color name="绿">#0f0</color>
+    <color name="青">#0ff</color>
+    <color name="蓝">#00f</color>
+    <color name="紫">#60f</color>
+    <color name="黑">#000</color>
+    <color name="天蓝">#f0ffff</color><!--天蓝色 -->
+    <color name="亮青">#e0ffff</color><!--亮青色 -->
+    <color name="亮天蓝">#87cefa</color><!--亮天蓝色 -->
+    <color name="white">#ffffff</color>
+</resources>
