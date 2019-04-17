@@ -35,10 +35,12 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <!--oSaeSWA48GarfwOFfPwPAGe4TVEEO5Qm-->
+        <!--XPS: Qreuf6g20pli9FhIzxQGAyPDbdQsFGf7-->
+        <!--台式：oSaeSWA48GarfwOFfPwPAGe4TVEEO5Qm-->
+        <!--笔记本：OHNvGGitsgZpwMdZaAFohZx0MvN3c21U-->
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
-            android:value="oSaeSWA48GarfwOFfPwPAGe4TVEEO5Qm" />
+            android:value="Qreuf6g20pli9FhIzxQGAyPDbdQsFGf7" />
 
         <activity
             android:name=".MainActivity"

@@ -27,13 +27,31 @@
             android:textAllCaps="false" />
 
         <EditText
-            android:id="@+id/edit"
+            android:id="@+id/speed"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"
             android:layout_gravity="center_vertical"
             android:background="@drawable/edit"
-            android:hint="  输入文件名"/>
+            android:hint=" 延时"/>
+
+        <EditText
+            android:id="@+id/color"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/edit"
+            android:hint=" 颜色"/>
+
+        <EditText
+            android:id="@+id/filename"
+            android:layout_width="0dp"
+            android:layout_weight="4"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/edit"
+            android:hint=" 输入文件名"/>
 
         <Button
             android:id="@+id/loadData"
@@ -41,6 +59,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="end"
             android:text="Load" />
+
     </LinearLayout>
 
 

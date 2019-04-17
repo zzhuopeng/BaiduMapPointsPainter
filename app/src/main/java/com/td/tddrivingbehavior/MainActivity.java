@@ -97,7 +97,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //车辆信息(线程同步)
     volatile List<Vehicle> vehicleList = Collections.synchronizedList(new ArrayList<Vehicle>());
     //文件名
-    private String fileName = "AA00004-T_1.csv";
+    private String fileName = "AA00002-T_1.csv";
+    private int speed = 1;//延时
+    private int color = 0;//颜色为3种，分别对应1,2,3
+    private final int []colorType ={0xFF00FF00, 0xFFFF0000, 0xFF0000FF};  //绿，红，蓝
     //是否第一次画图
     volatile boolean isFirstPlot = true; // Is the first time positioning
     //画图线程
@@ -167,9 +170,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dispalyButton.setOnClickListener(this);
         clearButton.setOnClickListener(this);
         //EditText
-        EditText editText = (EditText) findViewById(R.id.edit);
-        editText.setText("AA00004-T_1");
-        editText.addTextChangedListener(new TextWatcher() {
+        EditText fileNameEdit = (EditText) findViewById(R.id.filename);
+        fileNameEdit.setText(fileName);
+        fileNameEdit.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
@@ -182,11 +185,57 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (!TextUtils.isEmpty(s) && s.toString().matches("[A-Za-z0-9]+-[A-Za-z_0-9]+")) {
+                if (!TextUtils.isEmpty(s)) {
                     //去除所有空格
                     fileName = s.toString().replaceAll(" ", "") + ".csv";
                 } else {
-                    Toast.makeText(getApplicationContext(), "输入内容无效", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "文件名无效", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        EditText speedEdit = (EditText) findViewById(R.id.speed);
+        speedEdit.setText(String.valueOf(speed));
+        speedEdit.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (!TextUtils.isEmpty(s) && s.toString().matches("[0-9]+")) {
+                    //去除所有空格
+                    speed = Integer.parseInt(s.toString().replaceAll(" ", ""));
+                } else {
+                    Toast.makeText(getApplicationContext(), "延时无效", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        final EditText colorEdit = (EditText) findViewById(R.id.color);
+        colorEdit.setText(String.valueOf(color));
+        colorEdit.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (!TextUtils.isEmpty(s) && s.toString().matches("[0-2]")) {
+                    //去除所有空格
+                    color = Integer.parseInt(s.toString().replaceAll(" ", ""));
+                } else {
+                    Toast.makeText(getApplicationContext(), "颜色无效", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -346,18 +395,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
 
                 LatLng p1 = convertGPS2BDLL(vehicleList.get(i).getLat(), vehicleList.get(i).getLng());
-                if (1 == i % 2) {//减少数据量
+                if (1 == i % 3) {//减少数据量
                     OverlayOptions dotOptions = new DotOptions()
                             .center(p1)
-                            .color(0xAA00FF00) //设置颜色和透明度，0xAARRGGBB，如 0xAA00FF00 其中AA是透明度，00FF00为颜色
+                            .color(colorType[color%2]) //设置颜色和透明度，0xAARRGGBB，如 0xAA00FF00 其中AA是透明度，00FF00为颜色
                             .radius(5) //默认5px，现在用最小的1px
                             .visible(true);
                     mBaiduMap.addOverlay(dotOptions);
                 }
-                if (1 == i % 50) {//减少数据量
+                if (1 == i % 90) {//减少数据量
                     OverlayOptions textOptions = new TextOptions()
                             .text(String.valueOf(i)) //文字内容(int转String)
-                            .fontColor(0xFFFF0000)//文字颜色
+                            .fontColor(colorType[(color+1)%2])//文字颜色
                             .fontSize(10)//文字大小
                             .visible(true)
                             .align(TextOptions.ALIGN_RIGHT, TextOptions.ALIGN_BOTTOM) //文字对齐方式
@@ -366,11 +415,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
 
                 //延时用
-//                try {
-//                    sleep(20);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
+                try {
+                    sleep(speed);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
             runOnUiThread(new Runnable() {
@@ -384,13 +433,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             });
         }
 
-        public void setSuspend(boolean suspend) {
+        public void setSuspend(final boolean suspend) {
             if (!suspend) {
                 synchronized (control) {
                     control.notifyAll();
                 }
             }
             this.suspend = suspend;
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (suspend) {
+                        stopButton.setVisibility(View.GONE);//暂停后，停止按钮不可见
+                    }else {
+                        stopButton.setVisibility(View.VISIBLE);//继续画图时，暂停按钮可见
+                    }
+                }
+            });
         }
     }
 
@@ -399,7 +459,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     private LatLng convertGPS2BDLL(String latitude, String longitude) {
 
-        LatLng sourceLatLng = new LatLng(Double.valueOf(latitude) / 1000000, Double.valueOf(longitude) / 1000000);
+        LatLng sourceLatLng = new LatLng(Double.valueOf(latitude), Double.valueOf(longitude));
 
         return new CoordinateConverter()
                 .from(CoordinateConverter.CoordType.GPS)    //源数据类型GPS
@@ -441,12 +501,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     vehicleBean.setDirection_angle(csvRecord.get("direction_angle"));
                     vehicleBean.setLng(csvRecord.get("lngx"));//lng
                     vehicleBean.setLat(csvRecord.get("latx"));//lat
-                    vehicleBean.setAcc_state(csvRecord.get("acc_state"));
-                    vehicleBean.setRight_turn_signals(csvRecord.get("right_turn_signals"));
-                    vehicleBean.setLeft_turn_signals(csvRecord.get("left_turn_signals"));
-                    vehicleBean.setHand_brake(csvRecord.get("hand_brake"));
-                    vehicleBean.setFoot_brake(csvRecord.get("foot_brake"));
-                    vehicleBean.setLocation_time(csvRecord.get("location_time"));
                     vehicleBean.setGps_speed(csvRecord.get("gps_speed"));
                     vehicleBean.setMileage(csvRecord.get("mileage"));
                     vehicleList.add(vehicleBean);
@@ -473,6 +527,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mCurrentMode = MyLocationConfiguration.LocationMode.NORMAL;//NORMAL; COMPASS; FOLLOWING
         //Set positioning Marker as default
         mBaiduMap.setMyLocationConfiguration(new MyLocationConfiguration(mCurrentMode, true, null));
+//        mBaiduMap.setMapType(BaiduMap.MAP_TYPE_SATELLITE);//卫星地图
 
         initLocationOption();
     }
